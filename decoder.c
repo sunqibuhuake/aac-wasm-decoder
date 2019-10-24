@@ -1,146 +1,108 @@
+/*
+ * @Author: your name
+ * @Date: 2019-10-24 13:39:42
+ * @LastEditTime: 2019-10-24 16:11:16
+ * @LastEditors: Please set LastEditors
+ * @Description: In User Settings Edit
+ * @FilePath: /aac-wasm-decoder/decoder.c
+ */
+
 #include "decoder.h"
 
-
-AdtsQueue gen_adts_queue() {
-    AdtsQueue queue;
-    queue.cur_index = 0;
-    queue.total = 0;
-    queue.last_index = QUEUE_SIZE - 1;
-    return queue;
-}
-
-
-AAC_ADTS_DECODER *aac_adts_decoder_create() {
+AAC_ADTS_DECODER *aac_adts_decoder_create()
+{
 
     AAC_ADTS_DECODER decoder;
-    AdtsQueue adts_queue = gen_adts_queue();
-
-    decoder.adts_queue = adts_queue;
 
     decoder.aac_handle = NeAACDecOpen();
     decoder.config = NeAACDecGetCurrentConfiguration(decoder.aac_handle);
 
     // 会影响输出时 memcpy
-    decoder.config->defSampleRate = 44100;
-    decoder.config->defObjectType = LC;
-    
-    // need config 
+    // decoder.config->defSampleRate = 44100;
+    // decoder.config->defObjectType = LC;
+
+    // decoder.config->defSampleRate = input_sample_rate;
+    // decoder.config->defObjectType = input_type;
+
+    // need config
     decoder.config_ready = 0;
     NeAACDecSetConfiguration(decoder.aac_handle, decoder.config);
-
 
     AAC_ADTS_DECODER *ptr = malloc(sizeof(decoder));
     *ptr = decoder;
 
     return ptr;
-
 }
 
-
-// todo 处理队列
-// 写入速度和解码速度有待测试，测试环境下解码速度快于写入，故队列没有实际作用
-int aac_adts_decoder_enqueue(AAC_ADTS_DECODER *decoder, unsigned char *data, size_t size) {
-
-//    for (int i = 0; i < size; i++) {
-//        printf("%x", data[i]);
-//    }
-//    printf("\n");
-
-    int last_index = decoder->adts_queue.last_index;
-    int store_index;
-
-    if (last_index == (QUEUE_SIZE - 1)) {
-        store_index = 0;
-    } else {
-        store_index = last_index + 1;
-    }
-    decoder->adts_queue.last_index = store_index;
-
-
-//    if (store_index == decoder->adts_queue.cur_index) {
-//        if (decoder->adts_queue.total > 0) {
-//            printf("cur_index:%d\nstore_index:%d\n", decoder->adts_queue.cur_index, store_index);
-//            return 0;
-//        }
-//    }
-
-    OneSegment new_adts;
-    new_adts.bytes = size;
-    memcpy(new_adts.data, data, size);
-    decoder->adts_queue.queue[store_index] = new_adts;
-    decoder->adts_queue.total += 1;
-
-
-    return 1;
-}
-
-
-OneSegment *get_one_segment(AAC_ADTS_DECODER *decoder, int index) {
-    return &decoder->adts_queue.queue[index];
-}
-
-int aac_adts_decoder_decode(AAC_ADTS_DECODER *decoder, unsigned char *pcm_out) {
-
-
-    int cur_index = decoder->adts_queue.cur_index;
-//    printf("read from index:%d\n", cur_index);
-
-    // ❌
-    // unsigned char *data = (unsigned char *) &decoder->adts_queue.queue[0].data;
-    // int bytes = (int) decoder->adts_queue.queue[0].bytes;
-
-    // ✅
-    OneSegment *cur_seg = get_one_segment(decoder, cur_index);
-    unsigned char *data = cur_seg->data;
-    int bytes = cur_seg->bytes;
-
-    //  「ADTS requires a header for each frame, not just one per file.」
-    //  from : https://hydrogenaud.io/index.php/topic,52126.0.html
-
+int aac_adts_decoder_decode(AAC_ADTS_DECODER *decoder, unsigned char *data, size_t data_size, unsigned char *pcm_out)
+{
     // 配置的必要性有待考证
-    if (!decoder->config_ready) {
-        unsigned long samplerate = 0;
+    if (decoder->config_ready == 0)
+    {
+        size_t samplerate = 0;
         unsigned char channels = 0;
         int ret = NeAACDecInit(decoder->aac_handle, data, 4, &samplerate, &channels);
+
+        if (ret < 0) {
+            printf("Error: decoder init failed\n");
+            return ret;
+        }
         decoder->config_ready = 1;
     }
 
     NeAACDecFrameInfo frame_info;
+    
+    
+    
+    size_t cur_bytes = 0;
+    size_t left_bytes = data_size;
+    size_t pcm_buffer_bytes = 0;
+    void * pcm_data = NULL;
 
-    unsigned char *pcm_data = NeAACDecDecode(decoder->aac_handle, &frame_info, data, bytes);
-    // 不管是否解码成功，移动指针
-    decoder->adts_queue.cur_index += 1;
-
-    if (decoder->adts_queue.cur_index == QUEUE_SIZE) {
-        decoder->adts_queue.cur_index = 0;
-    }
-
-    if (frame_info.error > 0) {
-//        printf("FAAD DECODE ERROR:\n%s\n", NeAACDecGetErrorMessage(frame_info.error));
-        return -1;
-
-    } else {
-//        printf("解码成功！");
-        int samplesBytes = frame_info.samples << 1;
-//        printf("decode one frame ok: sam:%ld, chn=%d, samplecount=%ld, obj_type=%d, header_type=%d, consumed=%ld\npcm_bytes=%d\n",
-//               frame_info.samplerate, frame_info.channels, frame_info.samples, frame_info.object_type,
-//               frame_info.header_type, frame_info.bytesconsumed, samplesBytes);
+    do {
+        pcm_data = NeAACDecDecode(decoder->aac_handle, &frame_info, data + cur_bytes, data_size);
+        if (frame_info.error > 0) {
+                printf("Error: %s\n", NeAACDecGetErrorMessage(frame_info.error));
+                return -1;
+        } else {
+            cur_bytes += frame_info.bytesconsumed;
+            left_bytes -= frame_info.bytesconsumed;
+            int sampleBytes = frame_info.samples << 1;
 
 
-        memcpy(pcm_out, pcm_data, samplesBytes);
+//    printf("decode one frame ok: sam:%ld, chn=%d, samplecount=%ld, obj_type=%d, header_type=%d, consumed=%ld\n",
+//                               frame_info.samplerate, frame_info.channels, frame_info.samples, frame_info.object_type,
+//                               frame_info.header_type, frame_info.bytesconsumed);
 
 
-        return samplesBytes;
-    }
+            // todo 修复优化，这样会造成音频丢失
+            // 但是在当前场景下基本上不会出现问题
+            // 因为输入是单个 ADTS
+            if (pcm_buffer_bytes + sampleBytes > MAX_OUTPUT_BYTES) {
+                return pcm_buffer_bytes;
+            }
+            memcpy(pcm_out + pcm_buffer_bytes, pcm_data, sampleBytes);
+            pcm_buffer_bytes += sampleBytes;
+        }
+    } while(pcm_data && left_bytes > 0 && pcm_buffer_bytes < MAX_OUTPUT_BYTES);
+
+
+    return pcm_buffer_bytes;
+    
 }
 
-
-void aac_adts_decoder_free(AAC_ADTS_DECODER *decoder) {
+void aac_adts_decoder_free(AAC_ADTS_DECODER *decoder)
+{
     free(decoder);
 }
 
+char *aac_adts_decoder_version()
+{
+    return "1.0.0";
+}
 
-char *aac_adts_decoder_version() {
-    printf("powered by faad");
-    return "aac adts decoder 0.0.1\n";
+int main()
+{
+    printf("=======\nAAC MPEG2 DECODER\nAuthor: suNqi\nVersion: 1.0.0\n=======\n");
+    return 1;
 }

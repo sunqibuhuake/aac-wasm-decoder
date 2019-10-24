@@ -69,13 +69,6 @@ if (Module['ENVIRONMENT']) {
 }
 
 
-// Three configurations we can be running in:
-// 1) We could be the application main() thread running in the main JS UI thread. (ENVIRONMENT_IS_WORKER == false and ENVIRONMENT_IS_PTHREAD == false)
-// 2) We could be the application main() thread proxied to worker. (with Emscripten -s PROXY_TO_WORKER=1) (ENVIRONMENT_IS_WORKER == true, ENVIRONMENT_IS_PTHREAD == false)
-// 3) We could be an application pthread running in a worker. (ENVIRONMENT_IS_WORKER == true and ENVIRONMENT_IS_PTHREAD == true)
-
-
-
 
 // `/` should be present at the end if `scriptDirectory` is not empty
 var scriptDirectory = '';
@@ -255,9 +248,9 @@ moduleOverrides = null;
 // to the proper local x. This has two benefits: first, we only emit it if it is
 // expected to arrive, and second, by using a local everywhere else that can be
 // minified.
-if (Module['arguments']) arguments_ = Module['arguments'];if (!Object.getOwnPropertyDescriptor(Module, 'arguments')) Object.defineProperty(Module, 'arguments', { get: function() { abort('Module.arguments has been replaced with plain arguments_') } });
-if (Module['thisProgram']) thisProgram = Module['thisProgram'];if (!Object.getOwnPropertyDescriptor(Module, 'thisProgram')) Object.defineProperty(Module, 'thisProgram', { get: function() { abort('Module.thisProgram has been replaced with plain thisProgram') } });
-if (Module['quit']) quit_ = Module['quit'];if (!Object.getOwnPropertyDescriptor(Module, 'quit')) Object.defineProperty(Module, 'quit', { get: function() { abort('Module.quit has been replaced with plain quit_') } });
+if (Module['arguments']) arguments_ = Module['arguments'];if (!Object.getOwnPropertyDescriptor(Module, 'arguments')) Object.defineProperty(Module, 'arguments', { configurable: true, get: function() { abort('Module.arguments has been replaced with plain arguments_') } });
+if (Module['thisProgram']) thisProgram = Module['thisProgram'];if (!Object.getOwnPropertyDescriptor(Module, 'thisProgram')) Object.defineProperty(Module, 'thisProgram', { configurable: true, get: function() { abort('Module.thisProgram has been replaced with plain thisProgram') } });
+if (Module['quit']) quit_ = Module['quit'];if (!Object.getOwnPropertyDescriptor(Module, 'quit')) Object.defineProperty(Module, 'quit', { configurable: true, get: function() { abort('Module.quit has been replaced with plain quit_') } });
 
 // perform assertions in shell.js after we set up out() and err(), as otherwise if an assertion fails it cannot print the message
 // Assertions on removed incoming Module JS APIs.
@@ -269,10 +262,10 @@ assert(typeof Module['read'] === 'undefined', 'Module.read option was removed (m
 assert(typeof Module['readAsync'] === 'undefined', 'Module.readAsync option was removed (modify readAsync in JS)');
 assert(typeof Module['readBinary'] === 'undefined', 'Module.readBinary option was removed (modify readBinary in JS)');
 assert(typeof Module['setWindowTitle'] === 'undefined', 'Module.setWindowTitle option was removed (modify setWindowTitle in JS)');
-if (!Object.getOwnPropertyDescriptor(Module, 'read')) Object.defineProperty(Module, 'read', { get: function() { abort('Module.read has been replaced with plain read_') } });
-if (!Object.getOwnPropertyDescriptor(Module, 'readAsync')) Object.defineProperty(Module, 'readAsync', { get: function() { abort('Module.readAsync has been replaced with plain readAsync') } });
-if (!Object.getOwnPropertyDescriptor(Module, 'readBinary')) Object.defineProperty(Module, 'readBinary', { get: function() { abort('Module.readBinary has been replaced with plain readBinary') } });
-// TODO: add when SDL2 is fixed if (!Object.getOwnPropertyDescriptor(Module, 'setWindowTitle')) Object.defineProperty(Module, 'setWindowTitle', { get: function() { abort('Module.setWindowTitle has been replaced with plain setWindowTitle') } });
+if (!Object.getOwnPropertyDescriptor(Module, 'read')) Object.defineProperty(Module, 'read', { configurable: true, get: function() { abort('Module.read has been replaced with plain read_') } });
+if (!Object.getOwnPropertyDescriptor(Module, 'readAsync')) Object.defineProperty(Module, 'readAsync', { configurable: true, get: function() { abort('Module.readAsync has been replaced with plain readAsync') } });
+if (!Object.getOwnPropertyDescriptor(Module, 'readBinary')) Object.defineProperty(Module, 'readBinary', { configurable: true, get: function() { abort('Module.readBinary has been replaced with plain readBinary') } });
+// TODO: add when SDL2 is fixed if (!Object.getOwnPropertyDescriptor(Module, 'setWindowTitle')) Object.defineProperty(Module, 'setWindowTitle', { configurable: true, get: function() { abort('Module.setWindowTitle has been replaced with plain setWindowTitle') } });
 
 
 // TODO remove when SDL2 is fixed (also see above)
@@ -355,8 +348,6 @@ var asm2wasmImports = { // special asm2wasm imports
 
 
 
-var jsCallStartIndex = 1;
-var functionPointers = new Array(0);
 
 // Wraps a JS function as a wasm function with a given signature.
 // In the future, we may get a WebAssembly.Function constructor. Until then,
@@ -462,22 +453,13 @@ function removeFunctionWasm(index) {
 // 'sig' parameter is required for the llvm backend but only when func is not
 // already a WebAssembly function.
 function addFunction(func, sig) {
+  assert(typeof func !== 'undefined');
 
-
-  var base = 0;
-  for (var i = base; i < base + 0; i++) {
-    if (!functionPointers[i]) {
-      functionPointers[i] = func;
-      return jsCallStartIndex + i;
-    }
-  }
-  throw 'Finished up all reserved function pointers. Use a higher value for RESERVED_FUNCTION_POINTERS.';
-
+  return addFunctionWasm(func, sig);
 }
 
 function removeFunction(index) {
-
-  functionPointers[index-jsCallStartIndex] = null;
+  removeFunctionWasm(index);
 }
 
 var funcWrappers = {};
@@ -567,7 +549,8 @@ var GLOBAL_BASE = 1024;
 //    is up at http://kripken.github.io/emscripten-site/docs/api_reference/preamble.js.html
 
 
-var wasmBinary;if (Module['wasmBinary']) wasmBinary = Module['wasmBinary'];if (!Object.getOwnPropertyDescriptor(Module, 'wasmBinary')) Object.defineProperty(Module, 'wasmBinary', { get: function() { abort('Module.wasmBinary has been replaced with plain wasmBinary') } });
+var wasmBinary;if (Module['wasmBinary']) wasmBinary = Module['wasmBinary'];if (!Object.getOwnPropertyDescriptor(Module, 'wasmBinary')) Object.defineProperty(Module, 'wasmBinary', { configurable: true, get: function() { abort('Module.wasmBinary has been replaced with plain wasmBinary') } });
+var noExitRuntime;if (Module['noExitRuntime']) noExitRuntime = Module['noExitRuntime'];if (!Object.getOwnPropertyDescriptor(Module, 'noExitRuntime')) Object.defineProperty(Module, 'noExitRuntime', { configurable: true, get: function() { abort('Module.noExitRuntime has been replaced with plain noExitRuntime') } });
 
 
 if (typeof WebAssembly !== 'object') {
@@ -619,8 +602,14 @@ function getValue(ptr, type, noSafe) {
 
 var wasmMemory;
 
-// Potentially used for direct table calls.
-var wasmTable;
+// In fastcomp asm.js, we don't need a wasm Table at all.
+// In the wasm backend, we polyfill the WebAssembly object,
+// so this creates a (non-native-wasm) table for us.
+var wasmTable = new WebAssembly.Table({
+  'initial': 5,
+  'maximum': 5 + 0,
+  'element': 'anyfunc'
+});
 
 
 //========================================
@@ -693,7 +682,6 @@ function ccall(ident, returnType, argTypes, args, opts) {
     }
   }
   var ret = func.apply(null, cArgs);
-  assert(!(opts && opts.async), 'async call is only supported with Emterpretify for now, see #9029');
 
   ret = convertReturnValue(ret);
   if (stack !== 0) stackRestore(stack);
@@ -1210,24 +1198,24 @@ var HEAP,
 /** @type {Float64Array} */
   HEAPF64;
 
-function updateGlobalBufferViews() {
-  Module['HEAP8'] = HEAP8 = new Int8Array(buffer);
-  Module['HEAP16'] = HEAP16 = new Int16Array(buffer);
-  Module['HEAP32'] = HEAP32 = new Int32Array(buffer);
-  Module['HEAPU8'] = HEAPU8 = new Uint8Array(buffer);
-  Module['HEAPU16'] = HEAPU16 = new Uint16Array(buffer);
-  Module['HEAPU32'] = HEAPU32 = new Uint32Array(buffer);
-  Module['HEAPF32'] = HEAPF32 = new Float32Array(buffer);
-  Module['HEAPF64'] = HEAPF64 = new Float64Array(buffer);
+function updateGlobalBufferAndViews(buf) {
+  buffer = buf;
+  Module['HEAP8'] = HEAP8 = new Int8Array(buf);
+  Module['HEAP16'] = HEAP16 = new Int16Array(buf);
+  Module['HEAP32'] = HEAP32 = new Int32Array(buf);
+  Module['HEAPU8'] = HEAPU8 = new Uint8Array(buf);
+  Module['HEAPU16'] = HEAPU16 = new Uint16Array(buf);
+  Module['HEAPU32'] = HEAPU32 = new Uint32Array(buf);
+  Module['HEAPF32'] = HEAPF32 = new Float32Array(buf);
+  Module['HEAPF64'] = HEAPF64 = new Float64Array(buf);
 }
 
-
 var STATIC_BASE = 1024,
-    STACK_BASE = 114976,
+    STACK_BASE = 5365424,
     STACKTOP = STACK_BASE,
-    STACK_MAX = 5357856,
-    DYNAMIC_BASE = 5357856,
-    DYNAMICTOP_PTR = 114944;
+    STACK_MAX = 122544,
+    DYNAMIC_BASE = 5365424,
+    DYNAMICTOP_PTR = 122384;
 
 assert(STACK_BASE % 16 === 0, 'stack must start aligned');
 assert(DYNAMIC_BASE % 16 === 0, 'heap must start aligned');
@@ -1237,7 +1225,7 @@ assert(DYNAMIC_BASE % 16 === 0, 'heap must start aligned');
 var TOTAL_STACK = 5242880;
 if (Module['TOTAL_STACK']) assert(TOTAL_STACK === Module['TOTAL_STACK'], 'the stack size can no longer be determined at runtime')
 
-var INITIAL_TOTAL_MEMORY = Module['TOTAL_MEMORY'] || 16777216;if (!Object.getOwnPropertyDescriptor(Module, 'TOTAL_MEMORY')) Object.defineProperty(Module, 'TOTAL_MEMORY', { get: function() { abort('Module.TOTAL_MEMORY has been replaced with plain INITIAL_TOTAL_MEMORY') } });
+var INITIAL_TOTAL_MEMORY = Module['TOTAL_MEMORY'] || 16777216;if (!Object.getOwnPropertyDescriptor(Module, 'TOTAL_MEMORY')) Object.defineProperty(Module, 'TOTAL_MEMORY', { configurable: true, get: function() { abort('Module.TOTAL_MEMORY has been replaced with plain INITIAL_TOTAL_MEMORY') } });
 
 assert(INITIAL_TOTAL_MEMORY >= TOTAL_STACK, 'TOTAL_MEMORY should be larger than TOTAL_STACK, was ' + INITIAL_TOTAL_MEMORY + '! (TOTAL_STACK=' + TOTAL_STACK + ')');
 
@@ -1250,6 +1238,11 @@ assert(typeof Int32Array !== 'undefined' && typeof Float64Array !== 'undefined' 
 
 
 
+// In standalone mode, the wasm creates the memory, and the user can't provide it.
+// In non-standalone/normal mode, we create the memory here.
+
+// Create the main memory. (Note: this isn't used in STANDALONE_WASM mode since the wasm
+// memory is created in the wasm, not in JS.)
 
   if (Module['wasmMemory']) {
     wasmMemory = Module['wasmMemory'];
@@ -1271,21 +1264,27 @@ if (wasmMemory) {
 // specifically provide the memory length with Module['TOTAL_MEMORY'].
 INITIAL_TOTAL_MEMORY = buffer.byteLength;
 assert(INITIAL_TOTAL_MEMORY % WASM_PAGE_SIZE === 0);
-updateGlobalBufferViews();
+updateGlobalBufferAndViews(buffer);
 
 HEAP32[DYNAMICTOP_PTR>>2] = DYNAMIC_BASE;
+
+
 
 
 // Initializes the stack cookie. Called at the startup of main and at the startup of each thread in pthreads mode.
 function writeStackCookie() {
   assert((STACK_MAX & 3) == 0);
-  HEAPU32[(STACK_MAX >> 2)-1] = 0x02135467;
-  HEAPU32[(STACK_MAX >> 2)-2] = 0x89BACDFE;
+  // The stack grows downwards
+  HEAPU32[(STACK_MAX >> 2)+1] = 0x02135467;
+  HEAPU32[(STACK_MAX >> 2)+2] = 0x89BACDFE;
+  // Also test the global address 0 for integrity.
+  // We don't do this with ASan because ASan does its own checks for this.
+  HEAP32[0] = 0x63736d65; /* 'emsc' */
 }
 
 function checkStackCookie() {
-  var cookie1 = HEAPU32[(STACK_MAX >> 2)-1];
-  var cookie2 = HEAPU32[(STACK_MAX >> 2)-2];
+  var cookie1 = HEAPU32[(STACK_MAX >> 2)+1];
+  var cookie2 = HEAPU32[(STACK_MAX >> 2)+2];
   if (cookie1 != 0x02135467 || cookie2 != 0x89BACDFE) {
     abort('Stack overflow! Stack cookie has been overwritten, expected hex dwords 0x89BACDFE and 0x02135467, but received 0x' + cookie2.toString(16) + ' ' + cookie1.toString(16));
   }
@@ -1299,13 +1298,15 @@ function abortStackOverflow(allocSize) {
 }
 
 
-  HEAP32[0] = 0x63736d65; /* 'emsc' */
-
 
 
 // Endianness check (note: assumes compiler arch was little-endian)
-HEAP16[1] = 0x6373;
-if (HEAPU8[2] !== 0x73 || HEAPU8[3] !== 0x63) throw 'Runtime error: expected the system to be little-endian!';
+(function() {
+  var h16 = new Int16Array(1);
+  var h8 = new Int8Array(h16.buffer);
+  h16[0] = 0x6373;
+  if (h8[0] !== 0x73 || h8[1] !== 0x63) throw 'Runtime error: expected the system to be little-endian!';
+})();
 
 function abortFnPtrError(ptr, sig) {
 	abort("Invalid function pointer " + ptr + " called with signature '" + sig + "'. Perhaps this is an invalid value (e.g. caused by calling a virtual method on a NULL pointer)? Or calling a function with an incorrect type, which will fail? (it is worth building your source files with -Werror (warnings are errors), as warnings can indicate undefined behavior which can cause this). Build with ASSERTIONS=2 for more info.");
@@ -1544,6 +1545,24 @@ Module["preloadedImages"] = {}; // maps url to image data
 Module["preloadedAudios"] = {}; // maps url to audio data
 
 
+function abort(what) {
+  if (Module['onAbort']) {
+    Module['onAbort'](what);
+  }
+
+  what += '';
+  out(what);
+  err(what);
+
+  ABORT = true;
+  EXITSTATUS = 1;
+
+  var extra = '';
+  var output = 'abort(' + what + ') at ' + stackTrace() + extra;
+  throw output;
+}
+
+
 var memoryInitializer = null;
 
 
@@ -1634,18 +1653,11 @@ function getBinaryPromise() {
 
 // Create the wasm instance.
 // Receives the wasm imports, returns the exports.
-function createWasm(env) {
-
+function createWasm() {
   // prepare imports
   var info = {
-    'env': env
-    ,
-    'global': {
-      'NaN': NaN,
-      'Infinity': Infinity
-    },
-    'global.Math': Math,
-    'asm2wasm': asm2wasmImports
+    'env': asmLibraryArg,
+    'wasi_unstable': asmLibraryArg
   };
   // Load the wasm module and create an instance of using native support in the JS engine.
   // handle a generated wasm instance, receiving its exports and
@@ -1720,30 +1732,6 @@ function createWasm(env) {
   return {}; // no exports yet; we'll fill them in later
 }
 
-// Provide an "asm.js function" for the application, called to "link" the asm.js module. We instantiate
-// the wasm module at that time, and it receives imports and provides exports and so forth, the app
-// doesn't need to care that it is wasm or asm.js.
-
-Module['asm'] = function(global, env, providedBuffer) {
-  // memory was already allocated (so js could use the buffer)
-  env['memory'] = wasmMemory
-  ;
-  // import table
-  env['table'] = wasmTable = new WebAssembly.Table({
-    'initial': 8,
-    'maximum': 8,
-    'element': 'anyfunc'
-  });
-  // With the wasm backend __memory_base and __table_base and only needed for
-  // relocatable output.
-  env['__memory_base'] = 1024; // tell the memory segments where to place themselves
-  // table starts at 0 by default (even in dynamic linking, for the main module)
-  env['__table_base'] = 0;
-
-  var exports = createWasm(env);
-  assert(exports, 'binaryen setup failed (no wasm support?)');
-  return exports;
-};
 
 // Globals used by JS i64 conversions
 var tempDouble;
@@ -1756,39 +1744,12 @@ var ASM_CONSTS = [];
 
 
 
-
-// STATICTOP = STATIC_BASE + 113952;
-/* global initializers */ /*__ATINIT__.push();*/
-
-
-
-
-
+// STATICTOP = STATIC_BASE + 121520;
+/* global initializers */  __ATINIT__.push({ func: function() { ___wasm_call_ctors() } });
 
 
 
 /* no memory initializer */
-var tempDoublePtr = 114960
-assert(tempDoublePtr % 8 == 0);
-
-function copyTempFloat(ptr) { // functions, because inlining this code increases code size too much
-  HEAP8[tempDoublePtr] = HEAP8[ptr];
-  HEAP8[tempDoublePtr+1] = HEAP8[ptr+1];
-  HEAP8[tempDoublePtr+2] = HEAP8[ptr+2];
-  HEAP8[tempDoublePtr+3] = HEAP8[ptr+3];
-}
-
-function copyTempDouble(ptr) {
-  HEAP8[tempDoublePtr] = HEAP8[ptr];
-  HEAP8[tempDoublePtr+1] = HEAP8[ptr+1];
-  HEAP8[tempDoublePtr+2] = HEAP8[ptr+2];
-  HEAP8[tempDoublePtr+3] = HEAP8[ptr+3];
-  HEAP8[tempDoublePtr+4] = HEAP8[ptr+4];
-  HEAP8[tempDoublePtr+5] = HEAP8[ptr+5];
-  HEAP8[tempDoublePtr+6] = HEAP8[ptr+6];
-  HEAP8[tempDoublePtr+7] = HEAP8[ptr+7];
-}
-
 // {{PRE_LIBRARY}}
 
 
@@ -1799,7 +1760,7 @@ function copyTempDouble(ptr) {
 
   function demangleAll(text) {
       var regex =
-        /\b__Z[\w\d_]+/g;
+        /\b_Z[\w\d_]+/g;
       return text.replace(regex,
         function(x) {
           var y = demangle(x);
@@ -1834,6 +1795,34 @@ function copyTempDouble(ptr) {
       abort('Assertion failed: ' + UTF8ToString(condition) + ', at: ' + [filename ? UTF8ToString(filename) : 'unknown filename', line, func ? UTF8ToString(func) : 'unknown function']);
     }
 
+  function _emscripten_get_heap_size() {
+      return HEAP8.length;
+    }
+
+  function _emscripten_get_sbrk_ptr() {
+      return 122384;
+    }
+
+  function _emscripten_memcpy_big(dest, src, num) {
+      HEAPU8.set(HEAPU8.subarray(src, src+num), dest);
+    }
+
+  
+  function abortOnCannotGrowMemory(requestedSize) {
+      abort('Cannot enlarge memory arrays to size ' + requestedSize + ' bytes (OOM). Either (1) compile with  -s TOTAL_MEMORY=X  with X higher than the current value ' + HEAP8.length + ', (2) compile with  -s ALLOW_MEMORY_GROWTH=1  which allows increasing the size at runtime, or (3) if you want malloc to return NULL (0) instead of this abort, compile with  -s ABORTING_MALLOC=0 ');
+    }function _emscripten_resize_heap(requestedSize) {
+      abortOnCannotGrowMemory(requestedSize);
+    }
+
+  
+  function flush_NO_FILESYSTEM() {
+      // flush anything remaining in the buffers during shutdown
+      var fflush = Module["_fflush"];
+      if (fflush) fflush(0);
+      var buffers = SYSCALLS.buffers;
+      if (buffers[1].length) SYSCALLS.printChar(1, 10);
+      if (buffers[2].length) SYSCALLS.printChar(2, 10);
+    }
   
   
   var PATH={splitPath:function(filename) {
@@ -1924,109 +1913,151 @@ function copyTempDouble(ptr) {
         return low;
       },getZero:function() {
         assert(SYSCALLS.get() === 0);
-      }};function ___syscall140(which, varargs) {SYSCALLS.varargs = varargs;
-  try {
-   // llseek
-      var stream = SYSCALLS.getStreamFromFD(), offset_high = SYSCALLS.get(), offset_low = SYSCALLS.get(), result = SYSCALLS.get(), whence = SYSCALLS.get();
-      abort('it should not be possible to operate on streams when !SYSCALLS_REQUIRE_FILESYSTEM');
-      return 0;
-    } catch (e) {
-    if (typeof FS === 'undefined' || !(e instanceof FS.ErrnoError)) abort(e);
-    return -e.errno;
-  }
-  }
-
+      }};function _fd_write(fd, iov, iovcnt, pnum) {try {
   
-  function flush_NO_FILESYSTEM() {
-      // flush anything remaining in the buffers during shutdown
-      var fflush = Module["_fflush"];
-      if (fflush) fflush(0);
-      var buffers = SYSCALLS.buffers;
-      if (buffers[1].length) SYSCALLS.printChar(1, 10);
-      if (buffers[2].length) SYSCALLS.printChar(2, 10);
-    }function ___syscall146(which, varargs) {SYSCALLS.varargs = varargs;
-  try {
-   // writev
       // hack to support printf in SYSCALLS_REQUIRE_FILESYSTEM=0
-      var stream = SYSCALLS.get(), iov = SYSCALLS.get(), iovcnt = SYSCALLS.get();
-      var ret = 0;
+      var num = 0;
       for (var i = 0; i < iovcnt; i++) {
         var ptr = HEAP32[(((iov)+(i*8))>>2)];
         var len = HEAP32[(((iov)+(i*8 + 4))>>2)];
         for (var j = 0; j < len; j++) {
-          SYSCALLS.printChar(stream, HEAPU8[ptr+j]);
+          SYSCALLS.printChar(fd, HEAPU8[ptr+j]);
         }
-        ret += len;
+        num += len;
       }
-      return ret;
-    } catch (e) {
-    if (typeof FS === 'undefined' || !(e instanceof FS.ErrnoError)) abort(e);
-    return -e.errno;
-  }
-  }
-
-  function ___syscall54(which, varargs) {SYSCALLS.varargs = varargs;
-  try {
-   // ioctl
+      HEAP32[((pnum)>>2)]=num
       return 0;
     } catch (e) {
     if (typeof FS === 'undefined' || !(e instanceof FS.ErrnoError)) abort(e);
-    return -e.errno;
+    return e.errno;
   }
   }
 
-  function ___syscall6(which, varargs) {SYSCALLS.varargs = varargs;
-  try {
-   // close
-      var stream = SYSCALLS.getStreamFromFD();
-      abort('it should not be possible to operate on streams when !SYSCALLS_REQUIRE_FILESYSTEM');
-      return 0;
-    } catch (e) {
-    if (typeof FS === 'undefined' || !(e instanceof FS.ErrnoError)) abort(e);
-    return -e.errno;
-  }
-  }
-
-  function _emscripten_get_heap_size() {
-      return HEAP8.length;
+  
+  function _memcpy(dest, src, num) {
+      dest = dest|0; src = src|0; num = num|0;
+      var ret = 0;
+      var aligned_dest_end = 0;
+      var block_aligned_dest_end = 0;
+      var dest_end = 0;
+      // Test against a benchmarked cutoff limit for when HEAPU8.set() becomes faster to use.
+      if ((num|0) >= 8192) {
+        _emscripten_memcpy_big(dest|0, src|0, num|0)|0;
+        return dest|0;
+      }
+  
+      ret = dest|0;
+      dest_end = (dest + num)|0;
+      if ((dest&3) == (src&3)) {
+        // The initial unaligned < 4-byte front.
+        while (dest & 3) {
+          if ((num|0) == 0) return ret|0;
+          HEAP8[((dest)>>0)]=((HEAP8[((src)>>0)])|0);
+          dest = (dest+1)|0;
+          src = (src+1)|0;
+          num = (num-1)|0;
+        }
+        aligned_dest_end = (dest_end & -4)|0;
+        block_aligned_dest_end = (aligned_dest_end - 64)|0;
+        while ((dest|0) <= (block_aligned_dest_end|0) ) {
+          HEAP32[((dest)>>2)]=((HEAP32[((src)>>2)])|0);
+          HEAP32[(((dest)+(4))>>2)]=((HEAP32[(((src)+(4))>>2)])|0);
+          HEAP32[(((dest)+(8))>>2)]=((HEAP32[(((src)+(8))>>2)])|0);
+          HEAP32[(((dest)+(12))>>2)]=((HEAP32[(((src)+(12))>>2)])|0);
+          HEAP32[(((dest)+(16))>>2)]=((HEAP32[(((src)+(16))>>2)])|0);
+          HEAP32[(((dest)+(20))>>2)]=((HEAP32[(((src)+(20))>>2)])|0);
+          HEAP32[(((dest)+(24))>>2)]=((HEAP32[(((src)+(24))>>2)])|0);
+          HEAP32[(((dest)+(28))>>2)]=((HEAP32[(((src)+(28))>>2)])|0);
+          HEAP32[(((dest)+(32))>>2)]=((HEAP32[(((src)+(32))>>2)])|0);
+          HEAP32[(((dest)+(36))>>2)]=((HEAP32[(((src)+(36))>>2)])|0);
+          HEAP32[(((dest)+(40))>>2)]=((HEAP32[(((src)+(40))>>2)])|0);
+          HEAP32[(((dest)+(44))>>2)]=((HEAP32[(((src)+(44))>>2)])|0);
+          HEAP32[(((dest)+(48))>>2)]=((HEAP32[(((src)+(48))>>2)])|0);
+          HEAP32[(((dest)+(52))>>2)]=((HEAP32[(((src)+(52))>>2)])|0);
+          HEAP32[(((dest)+(56))>>2)]=((HEAP32[(((src)+(56))>>2)])|0);
+          HEAP32[(((dest)+(60))>>2)]=((HEAP32[(((src)+(60))>>2)])|0);
+          dest = (dest+64)|0;
+          src = (src+64)|0;
+        }
+        while ((dest|0) < (aligned_dest_end|0) ) {
+          HEAP32[((dest)>>2)]=((HEAP32[((src)>>2)])|0);
+          dest = (dest+4)|0;
+          src = (src+4)|0;
+        }
+      } else {
+        // In the unaligned copy case, unroll a bit as well.
+        aligned_dest_end = (dest_end - 4)|0;
+        while ((dest|0) < (aligned_dest_end|0) ) {
+          HEAP8[((dest)>>0)]=((HEAP8[((src)>>0)])|0);
+          HEAP8[(((dest)+(1))>>0)]=((HEAP8[(((src)+(1))>>0)])|0);
+          HEAP8[(((dest)+(2))>>0)]=((HEAP8[(((src)+(2))>>0)])|0);
+          HEAP8[(((dest)+(3))>>0)]=((HEAP8[(((src)+(3))>>0)])|0);
+          dest = (dest+4)|0;
+          src = (src+4)|0;
+        }
+      }
+      // The remaining unaligned < 4 byte tail.
+      while ((dest|0) < (dest_end|0)) {
+        HEAP8[((dest)>>0)]=((HEAP8[((src)>>0)])|0);
+        dest = (dest+1)|0;
+        src = (src+1)|0;
+      }
+      return ret|0;
     }
 
+  function _memset(ptr, value, num) {
+      ptr = ptr|0; value = value|0; num = num|0;
+      var end = 0, aligned_end = 0, block_aligned_end = 0, value4 = 0;
+      end = (ptr + num)|0;
   
-  function _llvm_exp2_f32(x) {
-      return Math.pow(2, x);
-    }function _llvm_exp2_f64(a0
-  ) {
-  return _llvm_exp2_f32(a0);
-  }
-
+      value = value & 0xff;
+      if ((num|0) >= 67 /* 64 bytes for an unrolled loop + 3 bytes for unaligned head*/) {
+        while ((ptr&3) != 0) {
+          HEAP8[((ptr)>>0)]=value;
+          ptr = (ptr+1)|0;
+        }
   
-  function _emscripten_memcpy_big(dest, src, num) {
-      HEAPU8.set(HEAPU8.subarray(src, src+num), dest);
+        aligned_end = (end & -4)|0;
+        value4 = value | (value << 8) | (value << 16) | (value << 24);
+  
+        block_aligned_end = (aligned_end - 64)|0;
+  
+        while((ptr|0) <= (block_aligned_end|0)) {
+          HEAP32[((ptr)>>2)]=value4;
+          HEAP32[(((ptr)+(4))>>2)]=value4;
+          HEAP32[(((ptr)+(8))>>2)]=value4;
+          HEAP32[(((ptr)+(12))>>2)]=value4;
+          HEAP32[(((ptr)+(16))>>2)]=value4;
+          HEAP32[(((ptr)+(20))>>2)]=value4;
+          HEAP32[(((ptr)+(24))>>2)]=value4;
+          HEAP32[(((ptr)+(28))>>2)]=value4;
+          HEAP32[(((ptr)+(32))>>2)]=value4;
+          HEAP32[(((ptr)+(36))>>2)]=value4;
+          HEAP32[(((ptr)+(40))>>2)]=value4;
+          HEAP32[(((ptr)+(44))>>2)]=value4;
+          HEAP32[(((ptr)+(48))>>2)]=value4;
+          HEAP32[(((ptr)+(52))>>2)]=value4;
+          HEAP32[(((ptr)+(56))>>2)]=value4;
+          HEAP32[(((ptr)+(60))>>2)]=value4;
+          ptr = (ptr + 64)|0;
+        }
+  
+        while ((ptr|0) < (aligned_end|0) ) {
+          HEAP32[((ptr)>>2)]=value4;
+          ptr = (ptr+4)|0;
+        }
+      }
+      // The remaining bytes.
+      while ((ptr|0) < (end|0)) {
+        HEAP8[((ptr)>>0)]=value;
+        ptr = (ptr+1)|0;
+      }
+      return (end-num)|0;
     }
-  
-   
 
-   
-
-   
-
-  
-  
-    
-
-  
-  function ___setErrNo(value) {
-      if (Module['___errno_location']) HEAP32[((Module['___errno_location']())>>2)]=value;
-      else err('failed to set errno from JS');
-      return value;
+  function _setTempRet0($i) {
+      setTempRet0(($i) | 0);
     }
-  
-  
-  function abortOnCannotGrowMemory(requestedSize) {
-      abort('Cannot enlarge memory arrays to size ' + requestedSize + ' bytes (OOM). Either (1) compile with  -s TOTAL_MEMORY=X  with X higher than the current value ' + HEAP8.length + ', (2) compile with  -s ALLOW_MEMORY_GROWTH=1  which allows increasing the size at runtime, or (3) if you want malloc to return NULL (0) instead of this abort, compile with  -s ABORTING_MALLOC=0 ');
-    }function _emscripten_resize_heap(requestedSize) {
-      abortOnCannotGrowMemory(requestedSize);
-    } 
 var ASSERTIONS = true;
 
 // Copyright 2017 The Emscripten Authors.  All rights reserved.
@@ -2059,123 +2090,189 @@ function intArrayToString(array) {
 }
 
 
-// ASM_LIBRARY EXTERN PRIMITIVES: Int8Array,Int32Array,Math_floor,Math_ceil
-
-function nullFunc_ii(x) { abortFnPtrError(x, 'ii'); }
-function nullFunc_iiii(x) { abortFnPtrError(x, 'iiii'); }
-function nullFunc_jiji(x) { abortFnPtrError(x, 'jiji'); }
+// ASM_LIBRARY EXTERN PRIMITIVES: Int8Array,Int32Array
 
 var asmGlobalArg = {};
-
-var asmLibraryArg = {
-  "abort": abort,
-  "setTempRet0": setTempRet0,
-  "getTempRet0": getTempRet0,
-  "abortStackOverflow": abortStackOverflow,
-  "nullFunc_ii": nullFunc_ii,
-  "nullFunc_iiii": nullFunc_iiii,
-  "nullFunc_jiji": nullFunc_jiji,
-  "___assert_fail": ___assert_fail,
-  "___setErrNo": ___setErrNo,
-  "___syscall140": ___syscall140,
-  "___syscall146": ___syscall146,
-  "___syscall54": ___syscall54,
-  "___syscall6": ___syscall6,
-  "_emscripten_get_heap_size": _emscripten_get_heap_size,
-  "_emscripten_memcpy_big": _emscripten_memcpy_big,
-  "_emscripten_resize_heap": _emscripten_resize_heap,
-  "_llvm_exp2_f32": _llvm_exp2_f32,
-  "_llvm_exp2_f64": _llvm_exp2_f64,
-  "abortOnCannotGrowMemory": abortOnCannotGrowMemory,
-  "demangle": demangle,
-  "demangleAll": demangleAll,
-  "flush_NO_FILESYSTEM": flush_NO_FILESYSTEM,
-  "jsStackTrace": jsStackTrace,
-  "stackTrace": stackTrace,
-  "tempDoublePtr": tempDoublePtr,
-  "DYNAMICTOP_PTR": DYNAMICTOP_PTR
+var asmLibraryArg = { "__assert_fail": ___assert_fail, "emscripten_get_sbrk_ptr": _emscripten_get_sbrk_ptr, "emscripten_memcpy_big": _emscripten_memcpy_big, "emscripten_resize_heap": _emscripten_resize_heap, "fd_write": _fd_write, "memory": wasmMemory, "setTempRet0": _setTempRet0, "table": wasmTable };
+var asm = createWasm();
+var real____wasm_call_ctors = asm["__wasm_call_ctors"];
+asm["__wasm_call_ctors"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real____wasm_call_ctors.apply(null, arguments);
 };
-// EMSCRIPTEN_START_ASM
-var asm =Module["asm"]// EMSCRIPTEN_END_ASM
-(asmGlobalArg, asmLibraryArg, buffer);
+
+var real__malloc = asm["malloc"];
+asm["malloc"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__malloc.apply(null, arguments);
+};
+
+var real__free = asm["free"];
+asm["free"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__free.apply(null, arguments);
+};
+
+var real__aac_adts_decoder_create = asm["aac_adts_decoder_create"];
+asm["aac_adts_decoder_create"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__aac_adts_decoder_create.apply(null, arguments);
+};
+
+var real__aac_adts_decoder_decode = asm["aac_adts_decoder_decode"];
+asm["aac_adts_decoder_decode"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__aac_adts_decoder_decode.apply(null, arguments);
+};
+
+var real__aac_adts_decoder_free = asm["aac_adts_decoder_free"];
+asm["aac_adts_decoder_free"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__aac_adts_decoder_free.apply(null, arguments);
+};
+
+var real__aac_adts_decoder_version = asm["aac_adts_decoder_version"];
+asm["aac_adts_decoder_version"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__aac_adts_decoder_version.apply(null, arguments);
+};
+
+var real__main = asm["main"];
+asm["main"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__main.apply(null, arguments);
+};
+
+var real__setThrew = asm["setThrew"];
+asm["setThrew"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real__setThrew.apply(null, arguments);
+};
+
+var real_stackSave = asm["stackSave"];
+asm["stackSave"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real_stackSave.apply(null, arguments);
+};
+
+var real_stackAlloc = asm["stackAlloc"];
+asm["stackAlloc"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real_stackAlloc.apply(null, arguments);
+};
+
+var real_stackRestore = asm["stackRestore"];
+asm["stackRestore"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real_stackRestore.apply(null, arguments);
+};
+
+var real___growWasmMemory = asm["__growWasmMemory"];
+asm["__growWasmMemory"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real___growWasmMemory.apply(null, arguments);
+};
+
+var real_dynCall_iii = asm["dynCall_iii"];
+asm["dynCall_iii"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real_dynCall_iii.apply(null, arguments);
+};
+
+var real_dynCall_ii = asm["dynCall_ii"];
+asm["dynCall_ii"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real_dynCall_ii.apply(null, arguments);
+};
+
+var real_dynCall_iiii = asm["dynCall_iiii"];
+asm["dynCall_iiii"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real_dynCall_iiii.apply(null, arguments);
+};
+
+var real_dynCall_jiji = asm["dynCall_jiji"];
+asm["dynCall_jiji"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return real_dynCall_jiji.apply(null, arguments);
+};
 
 Module["asm"] = asm;
-var _aac_adts_decoder_create = Module["_aac_adts_decoder_create"] = function() {
+var ___wasm_call_ctors = Module["___wasm_call_ctors"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-  return Module["asm"]["_aac_adts_decoder_create"].apply(null, arguments)
-};
-
-var _aac_adts_decoder_decode = Module["_aac_adts_decoder_decode"] = function() {
-  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-  return Module["asm"]["_aac_adts_decoder_decode"].apply(null, arguments)
-};
-
-var _aac_adts_decoder_enqueue = Module["_aac_adts_decoder_enqueue"] = function() {
-  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-  return Module["asm"]["_aac_adts_decoder_enqueue"].apply(null, arguments)
-};
-
-var _aac_adts_decoder_free = Module["_aac_adts_decoder_free"] = function() {
-  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-  return Module["asm"]["_aac_adts_decoder_free"].apply(null, arguments)
-};
-
-var _aac_adts_decoder_version = Module["_aac_adts_decoder_version"] = function() {
-  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-  return Module["asm"]["_aac_adts_decoder_version"].apply(null, arguments)
-};
-
-var _free = Module["_free"] = function() {
-  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
-  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-  return Module["asm"]["_free"].apply(null, arguments)
+  return Module["asm"]["__wasm_call_ctors"].apply(null, arguments)
 };
 
 var _malloc = Module["_malloc"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-  return Module["asm"]["_malloc"].apply(null, arguments)
+  return Module["asm"]["malloc"].apply(null, arguments)
 };
 
-var _memcpy = Module["_memcpy"] = function() {
+var _free = Module["_free"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-  return Module["asm"]["_memcpy"].apply(null, arguments)
+  return Module["asm"]["free"].apply(null, arguments)
 };
 
-var _memmove = Module["_memmove"] = function() {
+var _aac_adts_decoder_create = Module["_aac_adts_decoder_create"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-  return Module["asm"]["_memmove"].apply(null, arguments)
+  return Module["asm"]["aac_adts_decoder_create"].apply(null, arguments)
 };
 
-var _memset = Module["_memset"] = function() {
+var _aac_adts_decoder_decode = Module["_aac_adts_decoder_decode"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-  return Module["asm"]["_memset"].apply(null, arguments)
+  return Module["asm"]["aac_adts_decoder_decode"].apply(null, arguments)
 };
 
-var _rintf = Module["_rintf"] = function() {
+var _aac_adts_decoder_free = Module["_aac_adts_decoder_free"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-  return Module["asm"]["_rintf"].apply(null, arguments)
+  return Module["asm"]["aac_adts_decoder_free"].apply(null, arguments)
 };
 
-var _sbrk = Module["_sbrk"] = function() {
+var _aac_adts_decoder_version = Module["_aac_adts_decoder_version"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-  return Module["asm"]["_sbrk"].apply(null, arguments)
+  return Module["asm"]["aac_adts_decoder_version"].apply(null, arguments)
 };
 
-var establishStackSpace = Module["establishStackSpace"] = function() {
+var _main = Module["_main"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-  return Module["asm"]["establishStackSpace"].apply(null, arguments)
+  return Module["asm"]["main"].apply(null, arguments)
+};
+
+var _setThrew = Module["_setThrew"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["setThrew"].apply(null, arguments)
+};
+
+var stackSave = Module["stackSave"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["stackSave"].apply(null, arguments)
 };
 
 var stackAlloc = Module["stackAlloc"] = function() {
@@ -2190,10 +2287,16 @@ var stackRestore = Module["stackRestore"] = function() {
   return Module["asm"]["stackRestore"].apply(null, arguments)
 };
 
-var stackSave = Module["stackSave"] = function() {
+var __growWasmMemory = Module["__growWasmMemory"] = function() {
   assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
-  return Module["asm"]["stackSave"].apply(null, arguments)
+  return Module["asm"]["__growWasmMemory"].apply(null, arguments)
+};
+
+var dynCall_iii = Module["dynCall_iii"] = function() {
+  assert(runtimeInitialized, 'you need to wait for the runtime to be ready (e.g. wait for main() to be called)');
+  assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
+  return Module["asm"]["dynCall_iii"].apply(null, arguments)
 };
 
 var dynCall_ii = Module["dynCall_ii"] = function() {
@@ -2213,7 +2316,7 @@ var dynCall_jiji = Module["dynCall_jiji"] = function() {
   assert(!runtimeExited, 'the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)');
   return Module["asm"]["dynCall_jiji"].apply(null, arguments)
 };
-;
+
 
 
 
@@ -2288,12 +2391,16 @@ if (!Object.getOwnPropertyDescriptor(Module, "printErr")) Module["printErr"] = f
 if (!Object.getOwnPropertyDescriptor(Module, "getTempRet0")) Module["getTempRet0"] = function() { abort("'getTempRet0' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ)") };
 if (!Object.getOwnPropertyDescriptor(Module, "setTempRet0")) Module["setTempRet0"] = function() { abort("'setTempRet0' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ)") };
 if (!Object.getOwnPropertyDescriptor(Module, "callMain")) Module["callMain"] = function() { abort("'callMain' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ)") };
+if (!Object.getOwnPropertyDescriptor(Module, "abort")) Module["abort"] = function() { abort("'abort' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ)") };
 if (!Object.getOwnPropertyDescriptor(Module, "Pointer_stringify")) Module["Pointer_stringify"] = function() { abort("'Pointer_stringify' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ)") };
-if (!Object.getOwnPropertyDescriptor(Module, "warnOnce")) Module["warnOnce"] = function() { abort("'warnOnce' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ)") };if (!Object.getOwnPropertyDescriptor(Module, "ALLOC_NORMAL")) Object.defineProperty(Module, "ALLOC_NORMAL", { get: function() { abort("'ALLOC_NORMAL' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ)") } });
-if (!Object.getOwnPropertyDescriptor(Module, "ALLOC_STACK")) Object.defineProperty(Module, "ALLOC_STACK", { get: function() { abort("'ALLOC_STACK' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ)") } });
-if (!Object.getOwnPropertyDescriptor(Module, "ALLOC_DYNAMIC")) Object.defineProperty(Module, "ALLOC_DYNAMIC", { get: function() { abort("'ALLOC_DYNAMIC' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ)") } });
-if (!Object.getOwnPropertyDescriptor(Module, "ALLOC_NONE")) Object.defineProperty(Module, "ALLOC_NONE", { get: function() { abort("'ALLOC_NONE' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ)") } });
-if (!Object.getOwnPropertyDescriptor(Module, "calledRun")) Object.defineProperty(Module, "calledRun", { get: function() { abort("'calledRun' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ). Alternatively, forcing filesystem support (-s FORCE_FILESYSTEM=1) can export this for you") } });
+if (!Object.getOwnPropertyDescriptor(Module, "warnOnce")) Module["warnOnce"] = function() { abort("'warnOnce' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ)") };
+Module["writeStackCookie"] = writeStackCookie;
+Module["checkStackCookie"] = checkStackCookie;
+Module["abortStackOverflow"] = abortStackOverflow;if (!Object.getOwnPropertyDescriptor(Module, "ALLOC_NORMAL")) Object.defineProperty(Module, "ALLOC_NORMAL", { configurable: true, get: function() { abort("'ALLOC_NORMAL' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ)") } });
+if (!Object.getOwnPropertyDescriptor(Module, "ALLOC_STACK")) Object.defineProperty(Module, "ALLOC_STACK", { configurable: true, get: function() { abort("'ALLOC_STACK' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ)") } });
+if (!Object.getOwnPropertyDescriptor(Module, "ALLOC_DYNAMIC")) Object.defineProperty(Module, "ALLOC_DYNAMIC", { configurable: true, get: function() { abort("'ALLOC_DYNAMIC' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ)") } });
+if (!Object.getOwnPropertyDescriptor(Module, "ALLOC_NONE")) Object.defineProperty(Module, "ALLOC_NONE", { configurable: true, get: function() { abort("'ALLOC_NONE' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ)") } });
+if (!Object.getOwnPropertyDescriptor(Module, "calledRun")) Object.defineProperty(Module, "calledRun", { configurable: true, get: function() { abort("'calledRun' was not exported. add it to EXTRA_EXPORTED_RUNTIME_METHODS (see the FAQ). Alternatively, forcing filesystem support (-s FORCE_FILESYSTEM=1) can export this for you") } });
 
 
 
@@ -2312,12 +2419,54 @@ function ExitStatus(status) {
 
 var calledMain = false;
 
+
 dependenciesFulfilled = function runCaller() {
   // If run has never been called, and we should call run (INVOKE_RUN is true, and Module.noInitialRun is not false)
   if (!calledRun) run();
   if (!calledRun) dependenciesFulfilled = runCaller; // try this again later, after new deps are fulfilled
 };
 
+function callMain(args) {
+  assert(runDependencies == 0, 'cannot call main when async dependencies remain! (listen on Module["onRuntimeInitialized"])');
+  assert(__ATPRERUN__.length == 0, 'cannot call main when preRun functions remain to be called');
+
+  var entryFunction = Module['_main'];
+
+
+  var argc = 0;
+  var argv = 0;
+
+
+  try {
+
+
+    var ret = entryFunction(argc, argv);
+
+
+    // if we're not running an evented main loop, it's time to exit
+      exit(ret, /* implicit = */ true);
+  }
+  catch(e) {
+    if (e instanceof ExitStatus) {
+      // exit() throws this once it's done to make sure execution
+      // has been stopped completely
+      return;
+    } else if (e == 'SimulateInfiniteLoop') {
+      // running an evented main loop, don't immediately exit
+      noExitRuntime = true;
+      return;
+    } else {
+      var toLog = e;
+      if (e && typeof e === 'object' && e.stack) {
+        toLog = [e, e.stack];
+      }
+      err('exception thrown: ' + toLog);
+      quit_(1, e);
+    }
+  } finally {
+    calledMain = true;
+  }
+}
 
 
 
@@ -2350,7 +2499,7 @@ function run(args) {
 
     if (Module['onRuntimeInitialized']) Module['onRuntimeInitialized']();
 
-    assert(!Module['_main'], 'compiled without a main, but one is present. if you added it from JS, use Module["onRuntimeInitialized"]');
+    if (shouldRunNow) callMain(args);
 
     postRun();
   }
@@ -2408,14 +2557,14 @@ function exit(status, implicit) {
   // don't need to do anything here and can just leave. if the status is
   // non-zero, though, then we need to report it.
   // (we may have warned about this earlier, if a situation justifies doing so)
-  if (implicit && Module['noExitRuntime'] && status === 0) {
+  if (implicit && noExitRuntime && status === 0) {
     return;
   }
 
-  if (Module['noExitRuntime']) {
+  if (noExitRuntime) {
     // if exit() was called, we may warn the user if the runtime isn't actually being shut down
     if (!implicit) {
-      err('exit(' + status + ') called, but EXIT_RUNTIME is not set, so halting execution but not exiting the runtime or preventing further async execution (build with EXIT_RUNTIME=1, if you want a true shutdown)');
+      err('program exited (with status: ' + status + '), but EXIT_RUNTIME is not set, so halting execution but not exiting the runtime or preventing further async execution (build with EXIT_RUNTIME=1, if you want a true shutdown)');
     }
   } else {
 
@@ -2430,31 +2579,6 @@ function exit(status, implicit) {
   quit_(status, new ExitStatus(status));
 }
 
-var abortDecorators = [];
-
-function abort(what) {
-  if (Module['onAbort']) {
-    Module['onAbort'](what);
-  }
-
-  what += '';
-  out(what);
-  err(what);
-
-  ABORT = true;
-  EXITSTATUS = 1;
-
-  var extra = '';
-  var output = 'abort(' + what + ') at ' + stackTrace() + extra;
-  if (abortDecorators) {
-    abortDecorators.forEach(function(decorator) {
-      output = decorator(output, what);
-    });
-  }
-  throw output;
-}
-Module['abort'] = abort;
-
 if (Module['preInit']) {
   if (typeof Module['preInit'] == 'function') Module['preInit'] = [Module['preInit']];
   while (Module['preInit'].length > 0) {
@@ -2462,8 +2586,13 @@ if (Module['preInit']) {
   }
 }
 
+// shouldRunNow refers to calling main(), not run().
+var shouldRunNow = true;
 
-  Module["noExitRuntime"] = true;
+if (Module['noInitialRun']) shouldRunNow = false;
+
+
+  noExitRuntime = true;
 
 run();
 
@@ -2473,6 +2602,14 @@ run();
 
 // {{MODULE_ADDITIONS}}
 
+
+
+/*
+ * @Author: Sunqi
+ * @Date: 2019-09-10 14:51:34
+ * @LastEditTime: 2019-10-24 16:10:54
+ * @FilePath: /aac-wasm-decoder/js/post.js
+ */
 
 
 // output size: 4096/per
@@ -2486,8 +2623,8 @@ Module['AAC_ADTS_DECODER'] = AAC_ADTS_DECODER;
 //     // global.performance = performance;
 // }
 
- 
-function AdtsDecoded(pcm) {
+
+function AdtsDecoded({ pcm }) {
     // 采样频率暂时写死
     this.pcm = pcm;
     this.sampleRate = 44100;
@@ -2497,36 +2634,39 @@ function AdtsDecoded(pcm) {
 *   @param {Function} onDecode 
 * */
 function AAC_ADTS_DECODER(options) {
+    this.options = options || {}
+
     if ('function' !== typeof options.onDecode)
         throw Error('onDecode callback is required.');
 
     // set as read-only
-    Object.defineProperty(this, 'onDecode', {value: options.onDecode});
+    Object.defineProperty(this, 'onDecode', { value: options.onDecode });
 }
 
 // 初始化完成后返回resolve
-AAC_ADTS_DECODER.prototype.ready = new Promise(function(resolve, reject) {
+AAC_ADTS_DECODER.prototype.ready = new Promise(function (resolve, reject) {
     // queue the promise to resolve within Emscripten's init loop
-    addOnPreMain(function() {
+    addOnPreMain(function () {
         var api = {
             malloc: cwrap('malloc', 'number', ['number']),
             free: cwrap('free', null, ['number']),
             HEAPU8: HEAPU8,
             HEAPF32: HEAPF32,
-            decoderVersion: cwrap('aac_adts_decoder_version', 'string', []),
+            getDecoderVersion: cwrap('aac_adts_decoder_version', 'string', []),
+            // 音频赫兹  类型
+            // 44100 2 (LC)
             createDecoder: cwrap('aac_adts_decoder_create', null, []),
+            welcome: cwrap('main', 'Number', []),
             // decoder_ptr
             freeDecoder: cwrap('aac_adts_decoder_free', null, ['number']),
-            // decoder_ptr , input_ptr, inpute_size
-            enqueue: cwrap('aac_adts_decoder_enqueue', null, ['number', 'number', 'number']),
-            // decoder_ptr , output_ptr
+            // decoder_ptr , input_ptr, input_size, output_ptr
             // 当前返回数据为4096 字节（16bit : samplebytes * 2）
-            decode: cwrap('aac_adts_decoder_decode', 'number', ['number', 'number']),
+            decode: cwrap('aac_adts_decoder_decode', 'number', ['number', 'number', 'number', 'number']),
         }
 
         // 只读限制
         Object.freeze(api);
-        Object.defineProperty(AAC_ADTS_DECODER.prototype, 'api', {value: api});
+        Object.defineProperty(AAC_ADTS_DECODER.prototype, 'api', { value: api });
 
         resolve(this);
     });
@@ -2534,7 +2674,7 @@ AAC_ADTS_DECODER.prototype.ready = new Promise(function(resolve, reject) {
     // 用 AAC_ADTS_DECODER.ready.catch() 捕捉错误
     // 重写了emscripten 的错误抛出，版本更新后检查
     var origAbort = this.abort;
-    this.abort = function(what) {
+    this.abort = function (what) {
         console.log('abort')
         reject(Error(what));
         origAbort.call(this, what);
@@ -2545,59 +2685,60 @@ AAC_ADTS_DECODER.prototype.ready = new Promise(function(resolve, reject) {
 /*
 * @param {Uint8Array} uint8array adts buffer
 * */
-AAC_ADTS_DECODER.prototype.decode = function(uint8array) {
-    if (!(uint8array instanceof Uint8Array))
+AAC_ADTS_DECODER.prototype.decode = function (audio_buffer) {
+    if (!(audio_buffer instanceof Uint8Array))
         throw Error('Data to decode must be Uint8Array');
 
     if (!this._decoderPointer) {
+        // ⚠️⚠️⚠️ Tips ⚠️⚠️⚠️
+        // params are not required cause decoder will detect audio format autoly
         this._decoderPointer = this.api.createDecoder();
+        this.api.welcome()
     }
 
-    var src_ptr, pcm_str, pcm_array;
+    var input_ptr, output_ptr, output_array;
 
     try {
-        // 单帧
-        // 4096  2048 * 2 16bit
+        // 44100 Hz 单帧
+        // 4096字节  2048 * 2 16bit
         // 输出bytes
-        var decodedPcmSize = 4096;
+        var output_pcm_bytes = 1024 * 1024;
 
         // 输出 指针，数组  (U8 / F32 却别待研究)
-        [pcm_str, pcm_array] = this.createOutputArray(decodedPcmSize);
+        [output_ptr, output_array] = this.createOutputArray(output_pcm_bytes);
 
         // 传入字节数
-        var sendSize = uint8array.byteLength;
+        var input_size = audio_buffer.byteLength;
 
         // console.log('SEND IN :' + sendSize + ' bytes')
 
-        src_ptr = this.api.malloc(uint8array.BYTES_PER_ELEMENT * sendSize);
+        var input_bytes = input_size * audio_buffer.BYTES_PER_ELEMENT
+
+        input_ptr = this.api.malloc(input_bytes);
 
         // 移动（复制？）输入数据到指针位置
-        this.api.HEAPU8.set(uint8array, src_ptr);
+        this.api.HEAPU8.set(audio_buffer, input_ptr);
 
+        let output_bytes = this.api.decode(this._decoderPointer, input_ptr, input_bytes, output_ptr)
 
-        if (!this.api.enqueue(this._decoderPointer, src_ptr, sendSize)) {
-            throw Error('Could not enqueue bytes for decoding.  You may also have invalid Ogg Opus file.');
+        if (output_bytes < 0) {
+            throw Error('decode failed')
         }
 
-        this.api.decode(this._decoderPointer, pcm_str);
-
-
         this.onDecode(new AdtsDecoded(
-            pcm_array.slice(0, decodedPcmSize)
+            { pcm: output_array.slice(0, output_bytes) }
         ));
 
 
     } catch (e) {
         throw e;
     } finally {
-        // free wasm memory
-        // console.log("FREE POINTER")
-        this.api.free(src_ptr);
-        this.api.free(pcm_str);
+        this.api.free(input_ptr);
+        this.api.free(output_ptr);
     }
 }
 
-AAC_ADTS_DECODER.prototype.free = function() {
+AAC_ADTS_DECODER.prototype.free = function () {
     if (this._decoderPointer) {
         this.api.freeDecoder(this._decoderPointer);
     }
@@ -2605,7 +2746,7 @@ AAC_ADTS_DECODER.prototype.free = function() {
 
 // 指针使用完毕后free
 Object.defineProperty(AAC_ADTS_DECODER.prototype, 'createOutputArray', {
-    value: function(length) {
+    value: function (length) {
         var pointer = this.api.malloc(Uint8Array.BYTES_PER_ELEMENT * length);
         var array = new Uint8Array(this.api.HEAPU8.buffer, pointer, length);
         return [pointer, array];
