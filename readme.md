@@ -1,9 +1,10 @@
 <!--
  * @Author: Sunqi
  * @Date: 2019-09-09 18:47:41
- * @LastEditTime: 2019-10-24 16:45:28
+ * @LastEditTime: 2019-10-24 16:51:42
  -->
 # MPEG-2 AAC ADTS DECODER
+
 
 This is a web aac decoder based on [Faad2](https://sourceforge.net/projects/faac/files/faad2-src/).
 
@@ -14,10 +15,18 @@ If you need handling aac **mpeg-4** audio, you need to modify a bit of code manu
 
 [Difference between **AAC MPEG2** and **AAC MEPG4**](https://stackoverflow.com/questions/49189337/what-is-the-difference-between-aac-mpeg2-and-aac-mpeg4-encode-and-how-to-extra)
 
+Author: Sunqi
+
+Version: 1.0.0
+
+
 ---
 
 
+
+
 > Install  Emscripten before running the commands below.
+
 
 ## Compile Faad2
 
