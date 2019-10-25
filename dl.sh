@@ -1,7 +1,7 @@
 ### 
 # @Author: Sunqi
  # @Date: 2019-10-24 10:19:32
- # @LastEditTime: 2019-10-24 13:40:41
+ # @LastEditTime: 2019-10-26 00:48:49
  # @Description: Download faad2 and compile with emcc
  # @FilePath: /aac-wasm-decoder/dl.sh
  ###
@@ -18,7 +18,7 @@ mv faad2-${FAAD2_VERSION} faad2
 cd faad2
 
 . bootstrap
-emconfigure ./configure --enable-shared --disable-static --without-xmms --without-drm --without-mpeg4ip
+emconfigure ./configure --enable-shared --without-xmms --without-drm --without-mpeg4ip
 
 cd libfaad
 emmake make

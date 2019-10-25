@@ -1,7 +1,7 @@
 /*
  * @Author: Sunqi
  * @Date: 2019-09-09 16:08:48
- * @LastEditTime: 2019-10-24 16:11:26
+ * @LastEditTime: 2019-10-25 23:15:31
  * @Description: Decoder Header File
  * @FilePath: /aac-wasm-decoder/decoder.h
  */
@@ -11,7 +11,6 @@
 #include <stdio.h>
 #include "faad2/include/neaacdec.h"
 
- 
  // 1024 * 1024
  #define MAX_OUTPUT_BYTES  1048576
  
